@@ -24,10 +24,10 @@ class Photogate_SC20(object):
         _gate_1.when_deactivated = self._trigger_gate_1
         
     def _trigger_gate_0(self):
-        self._gate_0_trigger_time = time()
+        self._gate_0_trigger_time = time.time()
     
     def _trigger_gate_1(self):
-        return self._gate_1_trigger_time = time()
+        return self._gate_1_trigger_time = time.time()
         
     def reset(self):
         self._gate_0_trigger_time = float('nan')
