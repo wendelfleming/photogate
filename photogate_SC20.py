@@ -8,15 +8,15 @@ import math
 import argparse
 
 class Photogate_SC20(object):
-    def __init__(self, gate0_pin: int, gate1_pin: int, gate_distance: float, pin_factory = None):
+    def __init__(self, gate_0_pin: int, gate_1_pin: int, gate_distance: float, pin_factory = None):
         """
         :type gate0_pin: None
         :type gate1_pin: None
         :type gate_distance: Float
         """
         logging.info('Initializing a photogate.')
-        self._gate_0 = DigitalInputDevice(gate0_pin, pin_factory = pin_factory)
-        self._gate_1 = DigitalInputDevice(gate1_pin, pin_factory = pin_factory)
+        self._gate_0 = DigitalInputDevice(gate_0_pin, pin_factory = pin_factory)
+        self._gate_1 = DigitalInputDevice(gate_1_pin, pin_factory = pin_factory)
         self._gate_distance = gate_distance
         self._gate_0_trigger_time = float('nan')
         self._gate_1_trigger_time = float('nan')
@@ -57,20 +57,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Runs the photogate to determine the speed of "
                     "an object that passes through the photogate.")
-    parser.add_argument("-p0", dest="pin1", default=7, type=int,
+    parser.add_argument("-p0", dest="pin_0", default=17, type=int,
                         help="GPIO pin of the photogate's gate 0")
-    parser.add_argument("-p1", dest="pin1", default=7, type=int,
+    parser.add_argument("-p1", dest="pin_1", default=27, type=int,
                         help="GPIO pin of the photogate's gate 1")
     args = vars(parser.parse_args())
 
-    encoder = OptocouplerEncoder(gpio_pin=args['pin'])
-    previous_rotations = encoder.get_rotations()
-    print("Waiting for the encoder to turn...")
+    photogate = Photogate(gate_0_pin=args['pin_0'], gate_1_pin=args['pin_1'])
+    print("Running...")
     while True:
-        rotations = encoder.get_rotations()
-        if rotations != previous_rotations:
-            previous_rotations = rotations
-            print("Rotations:     {:f}".format(rotations))
-            print("Rotation Rate: {:f}".format(encoder.get_rotation_rate()))
-            print("Waiting for the encoder to turn...")
-        time.sleep(0.1)
+        speed = photogate.measure_speed()
+        gate_0_trigger_time = photogate.get_gate_0_trigger_time()
+        gate_1_trigger_time = photogate.get_gate_1_trigger_time()
+        print("Gate 0 Trigger Time:     {:f}".format(gate_0_trigger_time))
+        print("Gate 1 Trigger Time:     {:f}".format(gate_1_trigger_time))
+        print("Speed:     {:f}".format(speed))
+        print("Waiting for the next trigger...")
