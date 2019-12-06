@@ -15,35 +15,41 @@ class Photogate_SC20(object):
         :type gate_distance: Float
         """
         logging.info('Initializing a photogate.')
-        self._gate_0 = DigitalInputDevice(gate_0_pin, pin_factory = pin_factory)
-        self._gate_1 = DigitalInputDevice(gate_1_pin, pin_factory = pin_factory)
+        self._gate_0 = DigitalInputDevice(gate_0_pin, pull_up=True, pin_factory = pin_factory)
+        self._gate_1 = DigitalInputDevice(gate_1_pin, pull_up=True, pin_factory = pin_factory)
         self._gate_distance = gate_distance
+        self._gate_0_triggered = False
+        self._gate_1_triggered = False 
         self._gate_0_trigger_time = float('nan')
         self._gate_1_trigger_time = float('nan')
-        _gate_0.when_deactivated = self._trigger_gate_0
-        _gate_1.when_deactivated = self._trigger_gate_1
+        self._gate_0.when_deactivated = self._trigger_gate_0
+        self._gate_1.when_deactivated = self._trigger_gate_1
         
     def _trigger_gate_0(self):
-        self._gate_0_trigger_time = time.time()
+        if not self._gate_0_triggered:
+            self._gate_0_trigger_time = time.time()
+            self._gate_0_triggered = True
     
     def _trigger_gate_1(self):
-        return self._gate_1_trigger_time = time.time()
+        if not self._gate_1_triggered:
+            self._gate_1_trigger_time = time.time()
+            self._gate_1_triggered = True
         
     def reset(self):
         self._gate_0_trigger_time = float('nan')
         self._gate_1_trigger_time = float('nan')
     
     def get_gate_0_trigger_time(self):
-        return _gate_0_trigger_time
+        return self._gate_0_trigger_time
     
     def get_gate_1_trigger_time(self):
-        return _gate_1_trigger_time
+        return self._gate_1_trigger_time
     
     def get_gate_distance(self):
         return self._gate_distance
     
     def get_speed(self):
-        if math.isnan(_gate_0_trigger_time) or math.isnan(_gate_1_trigger_time):
+        if math.isnan(self._gate_0_trigger_time) or math.isnan(self._gate_1_trigger_time):
             return float('nan')
         else:
             return self._gate_distance/(self._gate_1_trigger_time - self._gate_0_trigger_time)
@@ -51,7 +57,13 @@ class Photogate_SC20(object):
     def measure_speed(self):
         self._gate_0.wait_for_inactive()
         self._gate_1.wait_for_inactive()
+        self._gate_0.wait_for_active()
+        self._gate_1.wait_for_active() 
         return self.get_speed()
+
+    def reset(self):
+        self._gate_0_triggered = False
+        self._gate_1_triggered = False 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -62,8 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("-p1", dest="pin_1", default=27, type=int,
                         help="GPIO pin of the photogate's gate 1")
     args = vars(parser.parse_args())
-
-    photogate = Photogate(gate_0_pin=args['pin_0'], gate_1_pin=args['pin_1'])
+    photogate = Photogate_SC20(gate_0_pin=args['pin_0'], gate_1_pin=args['pin_1'], gate_distance=0.02)
     print("Running...")
     while True:
         speed = photogate.measure_speed()
@@ -72,4 +83,6 @@ if __name__ == "__main__":
         print("Gate 0 Trigger Time:     {:f}".format(gate_0_trigger_time))
         print("Gate 1 Trigger Time:     {:f}".format(gate_1_trigger_time))
         print("Speed:     {:f}".format(speed))
+        time.sleep(5) 
         print("Waiting for the next trigger...")
+        photogate.reset()
