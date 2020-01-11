@@ -26,18 +26,20 @@ class Photogate_SC20(object):
         self._gate_1.when_deactivated = self._trigger_gate_1
         
     def _trigger_gate_0(self):
-        if not self._gate_0_triggered:
+        if not self._gate_0_triggered and not self._gate_1_triggered:
             self._gate_0_trigger_time = time.time()
             self._gate_0_triggered = True
     
     def _trigger_gate_1(self):
-        if not self._gate_1_triggered:
+        if self._gate_0_triggered and not self._gate_1_triggered:
             self._gate_1_trigger_time = time.time()
             self._gate_1_triggered = True
         
     def reset(self):
         self._gate_0_trigger_time = float('nan')
         self._gate_1_trigger_time = float('nan')
+        self._gate_0_triggered = False
+        self._gate_1_triggered = False
     
     def get_gate_0_trigger_time(self):
         return self._gate_0_trigger_time
@@ -76,13 +78,16 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     photogate = Photogate_SC20(gate_0_pin=args['pin_0'], gate_1_pin=args['pin_1'], gate_distance=0.02)
     print("Running...")
-    while True:
+    i = 0
+    while i < 1:
+    #while True:
         speed = photogate.measure_speed()
         gate_0_trigger_time = photogate.get_gate_0_trigger_time()
         gate_1_trigger_time = photogate.get_gate_1_trigger_time()
         print("Gate 0 Trigger Time:     {:f}".format(gate_0_trigger_time))
         print("Gate 1 Trigger Time:     {:f}".format(gate_1_trigger_time))
         print("Speed:     {:f}".format(speed))
-        time.sleep(5) 
+        #time.sleep(5) 
         print("Waiting for the next trigger...")
         photogate.reset()
+        i += 1
